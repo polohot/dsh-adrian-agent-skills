@@ -1,0 +1,8 @@
+# dsh-adrian-agent-skills bundle patch: one host row over the profile.
+# The row name resolves from the profile's own node_modules, where
+# `dsh plugin --profile <name> add -w /path/to/dsh-adrian-agent-skills`
+# installed this package.
+- insert:
+    - id: dsh-adrian-agent-skills
+      name: dsh-adrian-agent-skills
+      config: {}

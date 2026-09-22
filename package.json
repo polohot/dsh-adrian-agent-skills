@@ -1,0 +1,45 @@
+{
+  "name": "dsh-adrian-agent-skills",
+  "version": "0.1.0",
+  "description": "The addyosmani/agent-skills pack for DeepSeek Harness: 25 engineering lifecycle skills behind 9 /ags-* commands.",
+  "type": "module",
+  "main": "lib/index.js",
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "skills",
+    "references",
+    "agents",
+    "README.md",
+    "LICENSE"
+  ],
+  "license": "MIT",
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "dsh",
+    "agent-skills",
+    "skills",
+    "workflow",
+    "tdd",
+    "code-review"
+  ],
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "scripts": {
+    "test": "node test/selftest.mjs"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "*",
+    "@deepseek-ai/dsh-commands": "*",
+    "@deepseek-ai/dsh-llm": "*",
+    "@deepseek-ai/dsh-skill": "*",
+    "@deepseek-ai/schemastery": "*"
+  }
+}
