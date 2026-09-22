@@ -9,10 +9,19 @@ The pack covers the whole lifecycle: define, plan, build, verify, review, ship.
 ## Install
 
 ```sh
-dsh plugin --profile web add -w /path/to/dsh-adrian-agent-skills
+dsh plugin --profile web add github:polohot/dsh-adrian-agent-skills
 ```
 
 Restart DSH after the install, so the loader composes the new bundle.
+
+Pin a tag for a stable install:
+
+```sh
+dsh plugin --profile web add github:polohot/dsh-adrian-agent-skills#v0.1.0
+```
+
+The package is not on npm, so a bare `add dsh-adrian-agent-skills` does not
+resolve. Use the `github:` form above.
 
 ## Commands
 
