@@ -13,6 +13,7 @@ import { fileURLToPath } from 'node:url';
 const PKG = fileURLToPath(new URL('..', import.meta.url));
 const { parseSkillDocument } = await import(`${PKG}/lib/frontmatter.js`);
 const { COMMANDS, PERSONAS, SKILL_PREFIX } = await import(`${PKG}/lib/commands.js`);
+const { PERSONA_SKILL_PREFIX, childSkillNames, planChildren, renderBrief } = await import(`${PKG}/lib/brief.js`);
 
 /** The public skill-name grammar from @deepseek-ai/dsh-skill. */
 const SKILL_NAME = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -76,5 +77,48 @@ for (const folder of folders) {
 }
 check(missing.size === 0, `cited references resolve${missing.size ? ` -> ${[...missing].join(', ')}` : ''}`);
 
+// --- Delegation: the brief carries names, never bodies. ---
+// Acceptance criteria live in docs/delegation-spec.md.
+
+/** The largest brief the design allows. */
+const BRIEF_LIMIT = 2500;
+/** Commands whose child count is not 1. */
+const EXPECTED_CHILDREN = { 'ags-ship': 3 };
+/** Every skill body opens with a level-1 heading. A brief must not contain one. */
+const HEADINGS = folders
+  .map((folder) => parseSkillDocument(readFileSync(join(PKG, 'skills', folder, 'SKILL.md'), 'utf8')).body)
+  .map((body) => body.split(/\r?\n/).find((line) => line.startsWith('# ')))
+  .filter(Boolean)
+  .map((line) => line.trim());
+check(HEADINGS.length === folders.length, `${folders.length} skill body headings collected (found ${HEADINGS.length})`);
+
+for (const [persona] of Object.entries(PERSONAS)) {
+  const skillName = `${PERSONA_SKILL_PREFIX}${persona}`;
+  check(SKILL_NAME.test(skillName), `persona skill name ${skillName}`);
+}
+
+/** Largest injected brief, for the size report. */
+let largest = { name: '', length: 0 };
+for (const row of COMMANDS) {
+  const children = planChildren(row);
+  const want = EXPECTED_CHILDREN[row.name] ?? 1;
+  check(children.length === want, `${row.name} plans ${want} ${want === 1 ? 'child' : 'children'} (got ${children.length})`);
+  check(children.every((child) => childSkillNames(child).length > 0), `  ${row.name} every child loads something`);
+
+  const names = children.flatMap((child) => childSkillNames(child));
+  for (const [label, request] of [['request', 'do the thing'], ['empty', '']]) {
+    const brief = renderBrief(row, request, children);
+    if (brief.length > largest.length) largest = { name: `${row.name} (${label})`, length: brief.length };
+    const ok = brief.length < BRIEF_LIMIT
+      && names.every((skillName) => brief.includes(skillName))
+      && !HEADINGS.some((heading) => brief.includes(heading))
+      && (request !== '' || brief.includes('ask_user_question'))
+      && (request === '' || brief.includes(request));
+    check(ok, `  ${row.name} brief (${label}) ${brief.length} chars, no body, names resolve`);
+  }
+}
+
+console.log(`\nlargest brief: ${largest.name} at ${largest.length} chars (limit ${BRIEF_LIMIT})`);
+console.log(`largest skill body: ${Math.max(...folders.map((f) => readFileSync(join(PKG, 'skills', f, 'SKILL.md'), 'utf8').length))} chars`);
 console.log(`\n${failures.length === 0 ? 'ALL CHECKS PASSED' : `${failures.length} FAILURES`}`);
 process.exit(failures.length === 0 ? 0 : 1);

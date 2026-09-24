@@ -25,20 +25,29 @@ resolve. Use the `github:` form above.
 
 ## Commands
 
-Nine commands are visible to you. Each one loads the skills it needs and starts a
-turn.
+Nine commands are visible to you. Each one **delegates its work to a subagent**
+and starts a turn.
 
-| Command | What it does | Loads |
-|---|---|---|
-| `/ags-spec` | Write the spec before any code | `ags-spec-driven-development` |
-| `/ags-plan` | Break the work into small, atomic tasks | `ags-planning-and-task-breakdown` |
-| `/ags-build` | Build one verifiable slice at a time | `ags-incremental-implementation`, `ags-test-driven-development` |
-| `/ags-test` | Prove the behaviour with tests | `ags-test-driven-development` |
-| `/ags-constraints` | Set the quality bar and enforce it | `ags-constraint-driven-development` |
-| `/ags-review` | Review before merge | `ags-code-review-and-quality` |
-| `/ags-webperf` | Audit web performance | `web-performance-auditor` persona |
-| `/ags-code-simplify` | Simplify without changing behaviour | `ags-code-simplification` |
-| `/ags-ship` | Run the pre-launch gate | `ags-shipping-and-launch`, then 3 personas |
+The main agent never loads a skill body. A skill body is 12 KB to 21 KB, and the
+main agent does not need it. The command injects a short delegation brief instead:
+the child count, the exact skill each child loads, and the rules for context and
+merging. The main agent packs the context, starts the children, waits, and
+merges their reports. See [docs/delegation-spec.md](docs/delegation-spec.md).
+
+| Command | What it does | Children | Each child loads |
+|---|---|---|---|
+| `/ags-spec` | Write the spec before any code | 1 | `ags-spec-driven-development` |
+| `/ags-plan` | Break the work into small, atomic tasks | 1 | `ags-planning-and-task-breakdown` |
+| `/ags-build` | Build one verifiable slice at a time | 1 | `ags-incremental-implementation`, `ags-test-driven-development` |
+| `/ags-test` | Prove the behaviour with tests | 1 | `ags-test-driven-development` |
+| `/ags-constraints` | Set the quality bar and enforce it | 1 | `ags-constraint-driven-development` |
+| `/ags-review` | Review before merge | 1 | `ags-code-review-and-quality` |
+| `/ags-webperf` | Audit web performance | 1 | `ags-persona-web-performance-auditor` |
+| `/ags-code-simplify` | Simplify without changing behaviour | 1 | `ags-code-simplification` |
+| `/ags-ship` | Run the pre-launch gate | 3 | `ags-shipping-and-launch` plus one persona each |
+
+`/ags-ship` is the pack's parallel fan-out pattern. The three roles report apart,
+and the main agent merges. See `references/orchestration-patterns.md`.
 
 Type the command alone, or add a request after it:
 
@@ -48,10 +57,15 @@ Type the command alone, or add a request after it:
 
 ## Skills
 
-All 25 skills are registered with the `ags-` prefix. They stay
-`modelInvocable: true` and `userInvocable: false`. The model finds and loads them
-on its own. They do not appear in your slash list, and they cannot collide with a
-skill from another pack.
+All 25 skills are registered with the `ags-` prefix. The 4 personas are
+registered as `ags-persona-*` skills, so a child can load one by name. All 29
+stay `modelInvocable: true` and `userInvocable: false`. The model finds and loads
+them on its own. They do not appear in your slash list, and they cannot collide
+with a skill from another pack.
+
+A child starts with an empty conversation. It cannot see your chat, your files,
+or the main agent's messages. Tell the main agent what the child needs, or let
+the brief remind it.
 
 | Phase | Skills |
 |---|---|
@@ -85,11 +99,14 @@ The bundle patch accepts two options:
 | Path | Content |
 |---|---|
 | `lib/index.js` | Plugin entry. Loads the catalog, registers skills and commands |
+| `lib/brief.js` | Host-free delegation planning: the child plan and the injected brief |
 | `lib/commands.js` | The 9 command rows and their skill mapping |
 | `lib/frontmatter.js` | Reads `name` and `description` from a SKILL.md |
 | `skills/` | The 25 skills, with the `idea-refine` support files |
 | `references/` | 9 checklists that the skills cite |
-| `agents/` | 4 personas, used as subagent instructions |
+| `agents/` | 4 personas, registered as `ags-persona-*` skills |
+| `docs/delegation-spec.md` | The delegation contract and its acceptance criteria |
+| `test/selftest.mjs` | The offline checks, including the brief size and body-leak checks |
 
 A skill body cites a checklist as `references/security-checklist.md`. The plugin
 sets the skill resource base to the package root, so every cited path resolves
@@ -119,12 +136,13 @@ Osmani and contributors, under the MIT license.
 - Upstream commit: `dc27a9c2e13721158157632de61b4106c6c2a2a1`
 - Upstream date: 2026-09-20
 
-This package is a port. It changes the packaging only:
+This package is a port. It changes the packaging and the delivery:
 
 1. Skill names gain the `ags-` prefix.
 2. Skills register as model-invocable and not user-invocable.
 3. The 9 commands become DSH commands, and their names gain the `ags-` prefix.
-4. The 4 personas ride subagent instructions instead of Claude Code subagents.
+4. The 4 personas register as `ags-persona-*` skills, and each command delegates
+   its work to a child that loads them.
 5. Two checklists move from a skill folder to the shared `references/` folder.
 
 The skill bodies, the checklists, and the persona documents are unchanged.
