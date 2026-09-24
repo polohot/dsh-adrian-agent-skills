@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 const PKG = fileURLToPath(new URL('..', import.meta.url));
 const { parseSkillDocument } = await import(`${PKG}/lib/frontmatter.js`);
 const { COMMANDS, PERSONAS, SKILL_PREFIX } = await import(`${PKG}/lib/commands.js`);
-const { PERSONA_SKILL_PREFIX, childSkillNames, planChildren, renderBrief } = await import(`${PKG}/lib/brief.js`);
+const { PERSONA_SKILL_PREFIX, childSkillNames, planChildren, renderBrief, renderEntrySkill } = await import(`${PKG}/lib/brief.js`);
 
 /** The public skill-name grammar from @deepseek-ai/dsh-skill. */
 const SKILL_NAME = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -118,7 +118,22 @@ for (const row of COMMANDS) {
   }
 }
 
-console.log(`\nlargest brief: ${largest.name} at ${largest.length} chars (limit ${BRIEF_LIMIT})`);
+// --- The 9 human entry points: one per row, user-invocable, never a body. ---
+
+for (const row of COMMANDS) {
+  const body = renderEntrySkill(row);
+  if (body.length > largest.length) largest = { name: `${row.name} (entry skill)`, length: body.length };
+  const names = planChildren(row).flatMap((child) => childSkillNames(child));
+  const ok = SKILL_NAME.test(row.name)
+    && body.length < BRIEF_LIMIT
+    && names.every((skillName) => body.includes(skillName))
+    && !HEADINGS.some((heading) => body.includes(heading))
+    && body.includes('ask_user_question')
+    && body.includes('subagent');
+  check(ok, `entry skill ${row.name}: ${body.length} chars, no body, names resolve`);
+}
+
+console.log(`\nlargest message: ${largest.name} at ${largest.length} chars (limit ${BRIEF_LIMIT})`);
 console.log(`largest skill body: ${Math.max(...folders.map((f) => readFileSync(join(PKG, 'skills', f, 'SKILL.md'), 'utf8').length))} chars`);
 console.log(`\n${failures.length === 0 ? 'ALL CHECKS PASSED' : `${failures.length} FAILURES`}`);
 process.exit(failures.length === 0 ? 0 : 1);

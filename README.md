@@ -23,18 +23,32 @@ dsh plugin --profile web add github:polohot/dsh-adrian-agent-skills#v0.1.0
 The package is not on npm, so a bare `add dsh-adrian-agent-skills` does not
 resolve. Use the `github:` form above.
 
-## Commands
+## Entry points
 
-Nine commands are visible to you. Each one **delegates its work to a subagent**
-and starts a turn.
+Nine **skills** are the human surface of the pack. They appear in the Skills menu,
+and they are the only names you see. Each one **delegates its work to a subagent**:
+
+```
+/ags-spec        /ags-plan       /ags-build     /ags-test
+/ags-constraints /ags-review     /ags-webperf   /ags-code-simplify
+/ags-ship
+```
 
 The main agent never loads a skill body. A skill body is 12 KB to 21 KB, and the
-main agent does not need it. The command injects a short delegation brief instead:
-the child count, the exact skill each child loads, and the rules for context and
-merging. The main agent packs the context, starts the children, waits, and
-merges their reports. See [docs/delegation-spec.md](docs/delegation-spec.md).
+main agent does not need it. The entry skill injects a short delegation brief
+instead: the child count, the exact skill each child loads, and the rules for
+context and merging. The main agent packs the context, starts the children,
+waits, and merges their reports. See
+[docs/delegation-spec.md](docs/delegation-spec.md).
 
-| Command | What it does | Children | Each child loads |
+Each workflow follows the upstream command exactly. The only change is where it
+runs: upstream runs it in the main agent, and this port runs it in a child.
+
+The entry skills are `modelInvocable: false` and `userInvocable: true`. The human
+menu shows exactly these 9, and the model catalog stays free of them, so a child
+can never start a second round of delegation.
+
+| Entry skill | What it does | Children | Each child loads |
 |---|---|---|---|
 | `/ags-spec` | Write the spec before any code | 1 | `ags-spec-driven-development` |
 | `/ags-plan` | Break the work into small, atomic tasks | 1 | `ags-planning-and-task-breakdown` |
@@ -46,13 +60,23 @@ merges their reports. See [docs/delegation-spec.md](docs/delegation-spec.md).
 | `/ags-code-simplify` | Simplify without changing behaviour | 1 | `ags-code-simplification` |
 | `/ags-ship` | Run the pre-launch gate | 3 | `ags-shipping-and-launch` plus one persona each |
 
-`/ags-ship` is the pack's parallel fan-out pattern. The three roles report apart,
-and the main agent merges. See `references/orchestration-patterns.md`.
+`/ags-ship` is upstream's parallel fan-out. The three roles report apart, and the
+main agent merges them into one go/no-go decision with a rollback plan. See
+`references/orchestration-patterns.md`.
 
-Type the command alone, or add a request after it:
+Pick the entry skill, then add your request beside it:
 
 ```
 /ags-test cover store.js, including the empty-title case
+```
+
+The same 9 names are also available as slash commands, for a host that wants
+them. That path is off by default. Turn it on in the bundle patch:
+
+```yaml
+- id: dsh-adrian-agent-skills
+  config:
+    registerCommands: true
 ```
 
 ## Skills
