@@ -44,9 +44,14 @@ waits, and merges their reports. See
 Each workflow follows the upstream command exactly. The only change is where it
 runs: upstream runs it in the main agent, and this port runs it in a child.
 
-The entry skills are `modelInvocable: false` and `userInvocable: true`. The human
-menu shows exactly these 9, and the model catalog stays free of them, so a child
-can never start a second round of delegation.
+The entry skills are `modelInvocable: true` and `userInvocable: true`. Both usage
+shapes are real: you pick one from the menu, or you ask the main agent to manage
+the lifecycle and it picks one itself.
+
+The 29 workflow skills stay out of your menu, so it holds exactly 9 names.
+
+A delegation loop cannot run away. The brief tells the main agent to stop when it
+is already a subagent, and the platform caps delegation depth at 3.
 
 | Entry skill | What it does | Children | Each child loads |
 |---|---|---|---|
@@ -131,6 +136,7 @@ The bundle patch accepts two options:
 | `agents/` | 4 personas, registered as `ags-persona-*` skills |
 | `docs/delegation-spec.md` | The delegation contract and its acceptance criteria |
 | `test/selftest.mjs` | The offline checks, including the brief size and body-leak checks |
+| `test/registration.mjs` | Mounts the plugin on a fake host and proves all 38 skills and their policy |
 
 A skill body cites a checklist as `references/security-checklist.md`. The plugin
 sets the skill resource base to the package root, so every cited path resolves

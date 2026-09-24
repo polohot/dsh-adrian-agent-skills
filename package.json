@@ -1,6 +1,6 @@
 {
   "name": "dsh-adrian-agent-skills",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "The addyosmani/agent-skills pack for DeepSeek Harness: 25 engineering lifecycle skills behind 9 /ags-* commands.",
   "type": "module",
   "main": "lib/index.js",
@@ -33,7 +33,7 @@
     }
   },
   "scripts": {
-    "test": "node test/selftest.mjs"
+    "test": "node test/selftest.mjs && node test/registration.mjs"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "*",

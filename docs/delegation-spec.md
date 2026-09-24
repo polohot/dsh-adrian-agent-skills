@@ -17,14 +17,18 @@ itself with the `skill` tool.
 An **entry skill** injects a **delegation brief**. It does not inject skill
 bodies.
 
-The 9 entry skills are the human surface. Each is `userInvocable: true` and
-`modelInvocable: false`. A platform skill invocation injects its body verbatim
-and cannot run a handler, so the body must stand alone.
+The 9 entry skills are the surface you see. Each is `userInvocable: true` and
+`modelInvocable: true`, because both usage shapes are real: you pick an entry
+point from the menu, or you ask the main agent to manage the lifecycle and it
+picks one itself. The 29 workflow skills stay model-only, so your menu holds
+exactly 9 names. A platform skill invocation injects its body verbatim and cannot
+run a handler, so the body must stand alone.
 
 The brief holds:
 
 1. The user's request, verbatim, or a note that it arrives with the turn.
-2. The rule that the main agent must delegate and must not do the work.
+2. The rule that the main agent must delegate and must not do the work, and the
+   stop rule for a main agent that is itself a subagent.
 3. The child list. Each child names the skills and personas it must load.
 4. The context rule. Each child starts with an empty conversation, so the main
    agent writes the workspace path, the relevant files, the decisions, and the
@@ -85,5 +89,7 @@ child is the persona, so the child must not delegate again.
 4. `/ags-ship` names exactly 3 children. `/ags-webperf` names exactly 1.
 5. The offline self-test passes with no host.
 6. The repository registers 9 entry skills, one per row, named exactly like the
-   row. Each is user-invocable and not model-invocable. `/ags-ship` also carries
-   its merge rules, because the main agent must produce the go/no-go decision.
+   row. Each is user-invocable AND model-invocable. `/ags-ship` also carries its
+   merge rules, because the main agent must produce the go/no-go decision.
+7. `test/registration.mjs` mounts the plugin on a fake host and proves the
+   counts and the policy of all 38 skills, with no running DSH.
